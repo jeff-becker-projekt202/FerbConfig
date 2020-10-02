@@ -30,7 +30,8 @@ final class TypedConfigFactory
         }
         $params = $params ?? [];
         if (0 === count($params)) {
-            return $this->class->newInstance();
+            return self::assign_props_recursive($this->class, $props);
+
         }
         if (1 === count($params)) {
             return $this->class->newInstance($props);
@@ -67,5 +68,6 @@ final class TypedConfigFactory
                 $inst->{$key} = $value;
             }
         }
+        return $inst;
     }
 }

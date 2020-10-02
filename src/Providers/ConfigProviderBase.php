@@ -50,7 +50,6 @@ abstract class ConfigProviderBase implements ConfigProviderInterface
 
         $child_keys = $this->get_my_children($parent_path)
             ->append($previous_keys)
-
         ;
 
         return FluentIterator::from($child_keys)
