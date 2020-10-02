@@ -11,6 +11,8 @@ class ConfigRoot
     private array $providers;
     private array $providers_reverse;
 
+    private $path_children = [];
+
     public function __construct(array $providers)
     {
         $this->providers = array_values($providers ?? []);
@@ -32,24 +34,33 @@ class ConfigRoot
         return null;
     }
 
-    public function section(string $key = null): ConfigSection
+    public function section(string $key = ''): ConfigSection
     {
         return new ConfigSection($this, $key);
     }
 
-    public function children($path = ''): array
+    public function children($path = ''): iterable
     {
-        return FluentIterator::from($this->providers)
-            ->aggregate(function ($a, $p) use ($path) {
-            return $p->get_child_keys($a, $path);
-        }, FluentIterator::empty())
-        ;
+        if (!isset($this->path_children[$path])) {
+            $this->path_children[$path] = FluentIterator::from($this->providers)
+                ->reduce(function ($a, $p) use ($path) {
+                    return $p->get_child_keys($a, $path);
+                }, FluentIterator::none())->to_array();
+        }
+
+        return FluentIterator::from($this->path_children[$path]);
     }
+
 
     public function has_children($path = ''): bool
     {
         return $this->children($path)
             ->some(function ($p) { return true; })
         ;
+    }
+
+    public function as($type)
+    {
+        return (new ConfigSection($this, ''))->as($type);
     }
 }

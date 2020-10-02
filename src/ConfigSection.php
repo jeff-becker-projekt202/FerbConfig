@@ -6,12 +6,15 @@ namespace Ferb\Conf;
 
 use Ferb\Conf\Util\ConfigPath;
 use Ferb\Conf\Util\TypedConfigFactory;
+use Ferb\Iterators\FluentIterator;
 
 class ConfigSection
 {
     private ConfigRoot $root;
     private string $path;
     private string $key;
+
+    private $children;
 
     public function __construct(ConfigRoot $root, string $path)
     {
@@ -22,17 +25,21 @@ class ConfigSection
 
     public function value(string $key = null)
     {
-        return $this->root->value(ConfigPath::combine([$this->path, $key]));
+        return $this->root->value(ConfigPath::combine([$this->path, $key ?? $this->key]));
     }
 
-    public function section(string $key): ?ConfigSection
+    public function section(string $key ): ?ConfigSection
     {
         return $this->root->section(ConfigPath::combine([$this->path, $key]));
     }
 
     public function children(): iterable
     {
-        return $this->root->children($this->path);
+        if (!isset($this->children)) {
+            $this->children = $this->root->children($this->path)->to_array();
+        }
+
+        return FluentIterator::from($this->children);
     }
 
     public function key(): string
@@ -47,7 +54,7 @@ class ConfigSection
 
     public function has_children(): bool
     {
-        return $this->root->has_children($this->path);
+        return $this->children()->some(function ($x) {return true; });
     }
 
     public function as($type)
@@ -82,18 +89,21 @@ class ConfigSection
         return null;
     }
 
-    private function as_array()
-    {
-        $children = $this->children();
+    private static function make_array($children, $root, $path){
         $result = [];
-        foreach ($this->children() as $child) {
-            if ($child->has_children()) {
-                $result[$child->key()] = $child->as_array();
-            } else {
-                $result[$child->key()] = $child->value();
+        foreach($children as $child){
+            $child_path = ConfigPath::combine([$path, $child]);
+            if($root->has_children($child_path)){
+                $result[$child] = self::make_array($root->children($child_path)->to_array(), $root, $child_path);
+            }
+            else{
+                $result[$child] = $root->value($child_path);
             }
         }
-
         return $result;
+    }
+    private function as_array()
+    {
+        return   self::make_array($this->children()->to_array(), $this->root, $this->path);
     }
 }

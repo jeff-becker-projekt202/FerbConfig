@@ -21,7 +21,7 @@ final class ConfigPath
     {
         $last_index = stripos($path, self::KeyDelimiter, -0);
         if (false === $last_index) {
-            return $path;
+            return '';
         }
 
         return substr($path, $last_index + 1);
@@ -37,30 +37,32 @@ final class ConfigPath
         return substr($path, 0, $last_index);
     }
 
-    public static function compare_paths(string $x, string $y): int
+    public static function compare_paths()
     {
-        $x_parts = explode(ConfigPath::KeyDelimiter, $x) ?? [];
-        $y_parts = explode(ConfigPath::KeyDelimiter, $y) ?? [];
+        return function ($x, $y) {
+            $x_parts = explode(ConfigPath::KeyDelimiter, $x) ?? [];
+            $y_parts = explode(ConfigPath::KeyDelimiter, $y) ?? [];
 
-        for ($i = 0; $i < min(count($x_parts), \count($y_parts)); ++$i) {
-            $x = $x_parts[$i];
-            $y = $y_parts[$i];
-            $x_is_int = \is_numeric($x);
-            $y_is_int = \is_numeric($y);
+            for ($i = 0; $i < min(count($x_parts), \count($y_parts)); ++$i) {
+                $x = $x_parts[$i];
+                $y = $y_parts[$i];
+                $x_is_int = \is_numeric($x);
+                $y_is_int = \is_numeric($y);
 
-            $diff = 0;
-            if ($x_is_int && $y_is_int) {
-                $diff = intval($x) - intval($y);
-            } elseif (!$x_is_int && !$y_is_int) {
-                $diff = \strcasecmp($x, $y);
-            } else {
-                $diff = $x_is_int ? -1 : 1;
+                $diff = 0;
+                if ($x_is_int && $y_is_int) {
+                    $diff = intval($x) - intval($y);
+                } elseif (!$x_is_int && !$y_is_int) {
+                    $diff = \strcasecmp($x, $y);
+                } else {
+                    $diff = $x_is_int ? -1 : 1;
+                }
+                if (0 !== $diff) {
+                    return $diff;
+                }
             }
-            if (0 !== $diff) {
-                return $diff;
-            }
-        }
 
-        return count($x_parts) - count($y_parts);
+            return count($x_parts) - count($y_parts);
+        };
     }
 }

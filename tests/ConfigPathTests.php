@@ -13,18 +13,30 @@ use PHPUnit\Framework\TestCase;
  */
 class ConfigPathTests extends TestCase
 {
-    public function testFoo()
+    public function testBuilderArray()
     {
         $config = (new ConfigBuilder())
-            ->add_array(
-                ['test' => 1,
-                    'foo' => [
-                        'bar' => 2,
-                        'baz' => 3,
-                    ],
-                ]
-            )->create();
+            ->add_array($this->data())->create();
         $value = $config->section('test')->value();
         $this->assertEquals(1, $value);
+    }
+
+    public function testRoundTrip()
+    {
+        $config = (new ConfigBuilder())
+            ->add_array($this->data())->create();
+        $value = $config->as('array');
+        $this->assertEquals($this->data(), $value);
+    }
+
+    private function data()
+    {
+        return
+        ['test' => 1,
+            'foo' => [
+                'bar' => 2,
+                'baz' => 3,
+            ],
+        ];
     }
 }
