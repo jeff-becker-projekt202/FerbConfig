@@ -1,22 +1,28 @@
 <?php
-declare(strict_types=1);
-namespace Ferb\Conf\Providers;
 
+declare(strict_types=1);
+
+namespace Ferb\Conf\Providers;
 
 class IncludeProvider extends ConfigProviderBase
 {
     private $file;
-    public function __construct($file){
-        parent::__construct('','');
+
+    public function __construct($file)
+    {
+        parent::__construct('', '');
         $this->file = $file;
     }
-    protected function get_values():array{
-        $data = (function(){
-            return (include $this->file);
+
+    protected function get_values(): array
+    {
+        $data = (function () {
+            return include $this->file;
         })();
-        if($data === false) return [];
+        if (false === $data) {
+            return [];
+        }
 
         return parent::flatten($data);
-
     }
 }

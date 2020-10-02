@@ -1,63 +1,71 @@
 <?php
+
 declare(strict_types=1);
+
 namespace Ferb\Conf\Util;
-use Ferb\Conf\ConfigSection;
+
 final class TypedConfigFactory
 {
     private \ReflectionClass $class;
 
-    public function __construct($class_name){
-        $this->class= new \ReflectionClass($class_name);
-
+    public function __construct($class_name)
+    {
+        $this->class = new \ReflectionClass($class_name);
     }
-    public static function instantiate(string $type, $props){
-        if(\class_exists($type)){
+
+    public static function instantiate(string $type, $props)
+    {
+        if (\class_exists($type)) {
             return (new self($type))->create_from($props);
         }
+
         return null;
     }
+
     public function create_from($props)
     {
         $constructor = $this->class->getConstructor();
-        if($constructor!== null){
+        if (null !== $constructor) {
             $params = $constructor->getParameters();
         }
-        $params = $params ??[];
-        if(count($params) === 0){
+        $params = $params ?? [];
+        if (0 === count($params)) {
             return $this->class->newInstance();
         }
-        if(count($params) === 1){
+        if (1 === count($params)) {
             return $this->class->newInstance($props);
         }
-        throw new ReflectionException("$type does not have a constructor accepting zero or one args");
+
+        throw new ReflectionException("{$type} does not have a constructor accepting zero or one args");
     }
-    private static function get_property_type($class, $prop_name){
+
+    private static function get_property_type($class, $prop_name)
+    {
         try {
             $class_prop = $class->getProperty($prop_name);
-        }
-        catch(ReflectionException $ex){
+        } catch (ReflectionException $ex) {
             $class_prop = null;
         }
-        if($class_prop !== null){
+        if (null !== $class_prop) {
             $type = $class_prop->getType();
-            if($type !== null){
+            if (null !== $type) {
                 return $type->getName();
             }
         }
+
         return null;
     }
-    private static function assign_props_recursive($class, $props){
+
+    private static function assign_props_recursive($class, $props)
+    {
         $inst = $class->newInstance();
-        foreach($props as $key=>$value){
+        foreach ($props as $key => $value) {
             $type = self::get_property_type($class, $key);
-            if($type !== null && \class_exists($type)){
+            if (null !== $type && \class_exists($type)) {
                 $inst->{$key} = (new self($type))->create_from($value);
-            }
-            else{
+            } else {
                 $inst->{$key} = $value;
             }
-
         }
     }
-
 }

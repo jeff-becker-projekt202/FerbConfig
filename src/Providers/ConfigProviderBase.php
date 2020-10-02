@@ -1,163 +1,184 @@
 <?php
+
 declare(strict_types=1);
+
 namespace Ferb\Conf\Providers;
 
 use Ferb\Conf\Util\ConfigPath;
 use Ferb\Conf\Util\FluentIterator;
+
 abstract class ConfigProviderBase implements ConfigProviderInterface
 {
-    private  $data;
+    private $data;
     private $prefix;
     private $delimiter;
-    protected function __construct($prefix = '', $delimiter = ''){
 
+    protected function __construct($prefix = '', $delimiter = '')
+    {
         $this->prefix = $prefix ?? '';
         $this->delimiter = $delimiter;
         $this->data = self::create_lazy_data($this);
     }
-    protected static function create_lazy_data($provider){
-        return self::lazy(function() use ($provider){
-            $data = $provider->get_data();
-            $keys = \array_keys($data);
-
-            $key_indexes = [];
-            for($i = 0; $i<\count($keys); $i++){
-                $key_indexes[] = (object)[
-                    'key' =>$keys[$i],
-                    'value' => $data[$keys[$i]]
-                ];
-            }
-            \uasort($key_indexes,function ($a, $b){
-                return \strcasecmp($a->key, $b->key);
-            });
-            return (object)[
-                'key_index'=>$key_indexes,
-                'count'=> count($key_indexes),
-                'keys' =>$keys,
-
-            ];
-        });
-    }
-
-    protected static function lazy($value_factory){
-        return new class ($value_factory) {
-
-            private bool $has_loaded = false;
-            private $value_factory;
-            private $value_holder;
-            public function __construct(callable $value_factory){
-                $this->value_factory = $value_factory;
-            }
-            public function __get($name){
-                if(!$this->has_loaded){
-                    $this->has_loaded = true;
-                    $this->value_holder = ($this->value_factory)();
-                }
-
-                if($name === 'value'){
-                    return $this->value_holder;
-                }
-                if(isset($this->value_holder->{$name})){
-                    return $this->value_holder->{$name};
-                }
-            } 
-        };        
-    }
-    protected abstract function get_values():array;
-    protected function get_data():array
-    {
-
-        $result = [];
-
-        foreach($this->get_values() as $key=>$value){
-            $path = $this->normalize($key);
-            if($this->include($path)){
-                $result[$path] = $value;
-            }
-        }
-        
-        return $result;
-    }
-    protected function normalize($key) : string{
-        if(!empty($this->delimiter)){
-            $key = \str_replace($this->delimiter, ConfigPath::KeyDelimiter, $key);
-        }
-        return $key;
-    }
-    protected function include(string $key): bool{
-        return empty($this->prefix) || stripos($key, $this->prefix) === 0;
-    }
-    protected static function flatten($arr)
-    {
-        $result = [];
-        foreach($arr as $key=>$value){
-            if(is_array($value)){
-                foreach(self::flatten($value) as $child_key =>$child_value){
-                    $path = ConfigPath::combine([$key, $child_key]);
-                    $result[$path] = strval($child_value);
-                }
-            }
-            else{
-                $result[$key] = $value;
-            }
-        }
-        return $result;
-    }
-
 
     /**
      * gets a configuration value for the specified key.
      *
      * @return array [$success bool, $value mixed]
      */
-    public function get(string $key): array{
+    public function get(string $key): array
+    {
         $array = $this->data->key_index;
         $left = 0;
         // Set the right pointer to the length of the array -1.
         $right = $this->data->count - 1;
-     
-        while ($left <= $right) {
-          // Set the initial midpoint to the rounded down value of half the length of the array.
-          $midpoint = (int) \floor(($left + $right) / 2);
-          $comparison =   \strcasecmp($key, $array[$midpoint]->key);
 
-     
-          if ($comparison < 0) {
-            // The midpoint value is less than the value.
-            $left = $midpoint + 1;
-          } elseif ($comparison > 0) {
-            // The midpoint value is greater than the value.
-            $right = $midpoint - 1;
-          } else {
-            // This is the key we are looking for.
-            
-            return [
-                true,
-                $array[$midpoint]->value
-            ];
-          }
+        while ($left <= $right) {
+            // Set the initial midpoint to the rounded down value of half the length of the array.
+            $midpoint = (int) \floor(($left + $right) / 2);
+            $comparison = \strcasecmp($key, $array[$midpoint]->key);
+
+            if ($comparison < 0) {
+                // The midpoint value is less than the value.
+                $left = $midpoint + 1;
+            } elseif ($comparison > 0) {
+                // The midpoint value is greater than the value.
+                $right = $midpoint - 1;
+            } else {
+                // This is the key we are looking for.
+
+                return [
+                    true,
+                    $array[$midpoint]->value,
+                ];
+            }
         }
         // The value was not found.
-        return [false,null];
+        return [false, null];
     }
 
     /**
      * Returns the immediate descendant configuration keys for the given parent path
      * based on this provider's data and the set of keys returned by the preceeding
-     * providers
+     * providers.
      *
-     * @param array $previous_keys keys generated by the preceeding providers
-     * @param string $parent_path the parent path
+     * @param array  $previous_keys keys generated by the preceeding providers
+     * @param string $parent_path   the parent path
+     *
      * @return array the child keys
      */
-    public function get_child_keys(iterable $previous_keys, string $parent_path) :  iterable{
+    public function get_child_keys(iterable $previous_keys, string $parent_path): iterable
+    {
         return $this->get_my_children($parent_path)
             ->concat($previous_keys)
             ->unique()
-            ->order_by_asc(ConfigPath::compare_paths);
+            ->order_by_asc(ConfigPath::compare_paths)
+        ;
     }
-    private function get_my_children($parent_path){
-        return new FluentIterator( (function($parent_path){
+
+    protected static function create_lazy_data($provider)
+    {
+        return self::lazy(function () use ($provider) {
+            $data = $provider->get_data();
+            $keys = \array_keys($data);
+
+            $key_indexes = [];
+            for ($i = 0; $i < \count($keys); ++$i) {
+                $key_indexes[] = (object) [
+                    'key' => $keys[$i],
+                    'value' => $data[$keys[$i]],
+                ];
+            }
+            \uasort($key_indexes, function ($a, $b) {
+                return \strcasecmp($a->key, $b->key);
+            });
+
+            return (object) [
+                'key_index' => $key_indexes,
+                'count' => count($key_indexes),
+                'keys' => $keys,
+            ];
+        });
+    }
+
+    protected static function lazy($value_factory)
+    {
+        return new class($value_factory) {
+            private bool $has_loaded = false;
+            private $value_factory;
+            private $value_holder;
+
+            public function __construct(callable $value_factory)
+            {
+                $this->value_factory = $value_factory;
+            }
+
+            public function __get($name)
+            {
+                if (!$this->has_loaded) {
+                    $this->has_loaded = true;
+                    $this->value_holder = ($this->value_factory)();
+                }
+
+                if ('value' === $name) {
+                    return $this->value_holder;
+                }
+                if (isset($this->value_holder->{$name})) {
+                    return $this->value_holder->{$name};
+                }
+            }
+        };
+    }
+
+    abstract protected function get_values(): array;
+
+    protected function get_data(): array
+    {
+        $result = [];
+
+        foreach ($this->get_values() as $key => $value) {
+            $path = $this->normalize($key);
+            if ($this->include($path)) {
+                $result[$path] = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    protected function normalize($key): string
+    {
+        if (!empty($this->delimiter)) {
+            $key = \str_replace($this->delimiter, ConfigPath::KeyDelimiter, $key);
+        }
+
+        return $key;
+    }
+
+    protected function include(string $key): bool
+    {
+        return empty($this->prefix) || 0 === stripos($key, $this->prefix);
+    }
+
+    protected static function flatten($arr)
+    {
+        $result = [];
+        foreach ($arr as $key => $value) {
+            if (is_array($value)) {
+                foreach (self::flatten($value) as $child_key => $child_value) {
+                    $path = ConfigPath::combine([$key, $child_key]);
+                    $result[$path] = strval($child_value);
+                }
+            } else {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    private function get_my_children($parent_path)
+    {
+        return new FluentIterator((function ($parent_path) {
             $prefix = empty($parent_path) ? '' : $parent_path.ConfigPath::KeyDelimiter;
             $prefix_len = empty($parent_path) ? 0 : \strlen($prefix);
 
@@ -166,7 +187,5 @@ abstract class ConfigProviderBase implements ConfigProviderInterface
                 false === yield $index ? \substr($key, $prefix_length) : \substr($key, $index - $prefix_length);
             }
         })($parent_path));
-
     }
-   
 }
