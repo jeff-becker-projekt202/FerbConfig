@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
-namespace Ferb\Config\Providers;
+namespace Ferb\Conf\Providers;
 
 
 class JsonFileProvider extends ConfigProviderBase
 {
     private $file;
     public function __construct($file){
-        parent::construct('','');
+        parent::__construct('','');
         $this->file = $file;
     }
     protected function get_values():array{

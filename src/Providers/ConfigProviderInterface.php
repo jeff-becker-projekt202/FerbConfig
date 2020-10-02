@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace Ferb\Config\Providers;
+namespace Ferb\Conf\Providers;
 
-interface ConfigProivderInterface
+interface ConfigProviderInterface
 {
     /**
      * gets a configuration value for the specified key.

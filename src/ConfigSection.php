@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
-namespace Ferb\Config;
+namespace Ferb\Conf;
 
-use Ferb\Config\Util\ConfigPath;
-use Ferb\Config\Util\TypedConfigFactory;
+use Ferb\Conf\Util\ConfigPath;
+use Ferb\Conf\Util\TypedConfigFactory;
 class ConfigSection 
 {
     private ConfigRoot $root;
@@ -14,13 +14,13 @@ class ConfigSection
         $this->path = $path;
         $this->key = ConfigPath::get_section_key($path);
     }
-    public function value(string $key = null) : string {
-        return $this->root->value(ConfigPath::combine($this->path, $key));
+    public function value(string $key = null) {
+        return $this->root->value(ConfigPath::combine([$this->path, $key]));
     }
-    public function section(string $key) : ConfigSection {
-        return $this->root->section(ConfigPath::combine($this->path, $key));
+    public function section(string $key) : ?ConfigSection {
+        return $this->root->section(ConfigPath::combine([$this->path, $key]));
     }
-    public function children():array{
+    public function children():Iterable {
         return $this->root->children($this->path);
     }
     public function key():string{
@@ -33,7 +33,7 @@ class ConfigSection
     public function has_children(): bool{
         return $this->root->has_children($this->path);
     }
-    public function as($type) :array{
+    public function as($type) {
         if($type === 'array'){
             return $this->as_array();
         }

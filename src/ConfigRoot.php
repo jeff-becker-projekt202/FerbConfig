@@ -1,8 +1,9 @@
 <?php
 declare(strict_types=1);
-namespace Ferb\Config;
+namespace Ferb\Conf;
 ;
-use Ferb\Config\Util\ConfigPath;
+use Ferb\Conf\Util\ConfigPath;
+use Ferb\Iterators\FluentIterator;
 
 class ConfigRoot 
 {
@@ -14,13 +15,14 @@ class ConfigRoot
         $this->providers_reverse = \array_reverse($this->providers);
     }
 
-    public function value(string $key): string{
+    public function value(string $key){
         if(empty($key)){
             return null;
         }
         foreach($this->providers_reverse as $provider){
             list($found, $value) = $provider->get($key);
-            if($found){ return $value;}
+            if($found){ 
+                return $value;}
         }
         return null;
     }

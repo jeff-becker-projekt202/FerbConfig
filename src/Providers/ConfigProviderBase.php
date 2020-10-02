@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
-namespace Ferb\Config\Providers;
+namespace Ferb\Conf\Providers;
 
-use Ferb\Config\Util\ConfigPath;
-use Ferb\Config\Util\FluentIterator;
+use Ferb\Conf\Util\ConfigPath;
+use Ferb\Conf\Util\FluentIterator;
 abstract class ConfigProviderBase implements ConfigProviderInterface
 {
-    private Lazy $data;
+    private  $data;
     private $prefix;
     private $delimiter;
     protected function __construct($prefix = '', $delimiter = ''){
@@ -16,7 +16,7 @@ abstract class ConfigProviderBase implements ConfigProviderInterface
         $this->data = self::create_lazy_data($this);
     }
     protected static function create_lazy_data($provider){
-        self::lazy(function() use ($provider){
+        return self::lazy(function() use ($provider){
             $data = $provider->get_data();
             $keys = \array_keys($data);
 
@@ -43,9 +43,9 @@ abstract class ConfigProviderBase implements ConfigProviderInterface
         return new class ($value_factory) {
 
             private bool $has_loaded = false;
-            private mixed $value_factory;
-            private mixed $value_holder;
-            public function __construct($value_factory){
+            private $value_factory;
+            private $value_holder;
+            public function __construct(callable $value_factory){
                 $this->value_factory = $value_factory;
             }
             public function __get($name){
@@ -93,7 +93,7 @@ abstract class ConfigProviderBase implements ConfigProviderInterface
         foreach($arr as $key=>$value){
             if(is_array($value)){
                 foreach(self::flatten($value) as $child_key =>$child_value){
-                    $path = ConfigPath::combine($key, $child_key);
+                    $path = ConfigPath::combine([$key, $child_key]);
                     $result[$path] = strval($child_value);
                 }
             }

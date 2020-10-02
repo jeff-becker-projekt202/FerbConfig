@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
-namespace Ferb\Config\Util;
-use Ferb\Config\ConfigSection;
+namespace Ferb\Conf\Util;
+use Ferb\Conf\ConfigSection;
 final class TypedConfigFactory
 {
     private \ReflectionClass $class;

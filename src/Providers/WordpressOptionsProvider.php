@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace Ferb\Config\Providers;
+namespace Ferb\Conf\Providers;
 
 class WordpressOptionsProvider extends ConfigProviderBase
 {

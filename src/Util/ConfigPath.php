@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace Ferb\Config\Util;
+namespace Ferb\Conf\Util;
 
 final class ConfigPath {
         /// <summary>
@@ -11,7 +11,7 @@ final class ConfigPath {
 
         public static function combine(array $path_segments) : string
         {
-            return implode(self::KeyDelimiter,  $path_segments ?? []);
+            return implode(self::KeyDelimiter,  array_filter($path_segments ?? []));
         }
         public static function get_section_key(string $path) : string
         {
