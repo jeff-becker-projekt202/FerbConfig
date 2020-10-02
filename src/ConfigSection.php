@@ -94,7 +94,7 @@ class ConfigSection
         foreach($children as $child){
             $child_path = ConfigPath::combine([$path, $child]);
             if($root->has_children($child_path)){
-                $result[$child] = self::make_array($root->children($child_path)->to_array(), $root, $child_path);
+                $result[$child] = self::make_array($root->children($child_path), $root, $child_path);
             }
             else{
                 $result[$child] = $root->value($child_path);
@@ -104,6 +104,6 @@ class ConfigSection
     }
     private function as_array()
     {
-        return   self::make_array($this->children()->to_array(), $this->root, $this->path);
+        return   self::make_array($this->children(), $this->root, $this->path);
     }
 }
